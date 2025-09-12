@@ -1,0 +1,59 @@
+# Nextflow execution files
+.nextflow/
+.nextflow.log*
+work/
+*.trace
+*.timeline
+*.html
+
+# Output directories
+results/
+test_output/
+*_output/
+
+# Test directories (local testing only)
+test_*/
+
+# Test artifacts
+test/test_output/
+test/*.log
+
+# Temporary files
+*.tmp
+*.temp
+target_variants.txt
+ref_variants.txt
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+BUILD_MISMATCH_DETECTED
+
+# Logs
+*.log
+
+# Compressed files (unless specifically needed)
+*.gz.tbi
+
+# Project-specific files (not for publication)
+CLAUDE.md
