@@ -374,7 +374,7 @@ def check_allele_switch(target_vcf, reference_file, output_file, use_legend=Fals
     try:
         with gzip.open(ref_panel_file, 'wt') as ref_out:
             # Write legend header (matching the original format)
-            ref_out.write("ID\tCHROM\tPOS\tREF\tALT\tAAF_AFR\tAAF_ALL\tMAF_AFR\tMAF_ALL\n")
+            ref_out.write("ID\tCHROM\tPOS\tREF\tALT\n")
             
             # Write all reference variants (both matched and unmatched)
             for pos in sorted(ref_variants.keys()):
@@ -387,7 +387,7 @@ def check_allele_switch(target_vcf, reference_file, output_file, use_legend=Fals
                 variant_id = f"{original_chrom}:{position}:{ref_ref}:{ref_alt}"
                 
                 # Write variant (with placeholder values for frequency columns)
-                ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\t.\t.\t.\t.\n")
+                ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\n")
         print(f"Successfully created reference legend file: {ref_panel_file}")
     except Exception as e:
         print(f"Error creating reference legend file: {e}")
@@ -395,13 +395,13 @@ def check_allele_switch(target_vcf, reference_file, output_file, use_legend=Fals
         try:
             ref_panel_file_txt = ref_panel_file.replace('.gz', '')
             with open(ref_panel_file_txt, 'w') as ref_out:
-                ref_out.write("ID\tCHROM\tPOS\tREF\tALT\tAAF_AFR\tAAF_ALL\tMAF_AFR\tMAF_ALL\n")
+                ref_out.write("ID\tCHROM\tPOS\tREF\tALT\n")
                 for pos in sorted(ref_variants.keys()):
                     chrom, position = pos
                     ref_ref, ref_alt = ref_variants[pos]
                     original_chrom = original_chroms.get(chrom, f"chr{chrom}")
                     variant_id = f"{original_chrom}:{position}:{ref_ref}:{ref_alt}"
-                    ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\t.\t.\t.\t.\n")
+                    ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\n")
             print(f"Created uncompressed reference legend file: {ref_panel_file_txt}")
         except Exception as e2:
             print(f"Error creating uncompressed legend file: {e2}")
