@@ -112,7 +112,7 @@ If you use CheckRef for your analysis, please cite it using the following:
 ```bibtex
 @software{checkref_2025,
   title = {CheckRef: Allele Switch Checker for Population Genetics},
-  author = {Mamana Mbiyavanga and AfriGen-D Consortium},
+  author = {Mamana Mbiyavanga and AfriGen-D project},
   year = {2025},
   url = {https://github.com/AfriGen-D/checkref},
   note = {Nextflow pipeline for detecting and correcting allele switches}

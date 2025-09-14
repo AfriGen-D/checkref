@@ -32,7 +32,7 @@ If you use CheckRef in your research, please cite:
 ```bibtex
 @software{checkref_2025,
   title = {CheckRef: Allele Switch Checker for Population Genetics},
-  author = {Mamana Mbiyavanga and AfriGen-D Consortium},
+  author = {Mamana Mbiyavanga and AfriGen-D project},
   year = {2025},
   url = {https://github.com/AfriGen-D/checkref},
   note = {Nextflow pipeline for detecting and correcting allele switches}
@@ -42,7 +42,7 @@ If you use CheckRef in your research, please cite:
 ## AfriGen-D Project
 
 - **AfriGen-D**
-  > AfriGen-D Consortium. (2025). Enabling innovation in African genomics research. Retrieved from https://afrigen-d.org
+  > AfriGen-D project. (2025). Enabling innovation in African genomics research. Retrieved from https://afrigen-d.org
 
 ## Framework Attribution
 
