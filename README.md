@@ -1,155 +1,252 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/AfriGen-D/afrigen-d-templates/main/assets/afrigen-d-logo.png" alt="AfriGen-D Logo" width="200" />
-  <h1>CheckRef</h1>
-</div>
+# Allele Switch Checker Workflow
 
-<div align="center">
+A Nextflow pipeline for checking allele switches between a target VCF and a reference panel legend file, with options to fix identified issues.
 
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg)](https://www.nextflow.io/)
-[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
-[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
-[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Documentation](https://img.shields.io/badge/docs-checkref--docs-blue)](https://afrigen-d.github.io/checkref-docs/)
+## Repository Structure
 
-</div>
-
-## Introduction
-
-CheckRef is a bioinformatics best-practice analysis pipeline for detecting and correcting allele switches between target VCF files and reference panels. The pipeline is designed to work with VCF files and produces corrected VCF files with verified allele orientations.
-
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute environments in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible.
-
-## Pipeline summary
-
-CheckRef performs the following steps:
-
-1. **VCF Validation** - Assess file integrity and format compliance
-2. **Chromosome Detection** - Automatically identify chromosomes from filenames
-3. **Reference Matching** - Pair VCF files with corresponding legend files
-4. **Allele Switch Detection** - Compare REF/ALT orientations against reference
-5. **Correction/Removal** - Fix allele switches or remove problematic sites
-6. **Verification** - Validate that corrections were successful
-7. **Results Aggregation** - Generate comprehensive summary reports
-
-## Quick Start
-
-1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=21.04.0`)
-
-2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility
-
-3. Download the pipeline and test it on a minimal dataset:
-
-   ```bash
-   nextflow run AfriGen-D/checkref -profile test,docker --outdir results
-   ```
-
-4. Start running your own analysis!
-
-   ```bash
-   nextflow run AfriGen-D/checkref \
-       --targetVcfs "sample*.vcf.gz" \
-       --referenceDir /path/to/reference/panels/ \
-       --fixMethod correct \
-       --outdir results \
-       -profile <docker/singularity/podman/shifter/charliecloud/conda>
-   ```
-
-## Documentation
-
-The CheckRef pipeline comes with comprehensive documentation: **https://afrigen-d.github.io/checkref-docs/**
-
-- [Quick Start Tutorial](https://afrigen-d.github.io/checkref-docs/tutorials/quick-start)
-- [Parameter Reference](https://afrigen-d.github.io/checkref-docs/reference/parameters)
-- [Examples](https://afrigen-d.github.io/checkref-docs/examples/)
-- [Troubleshooting](https://afrigen-d.github.io/checkref-docs/docs/troubleshooting)
-
-## Parameters
-
-### Input/output options
-
-| Parameter | Description | Type | Default | Required | Hidden |
-|-----------|-----------|------|---------|----------|--------|
-| `--targetVcfs` | Target VCF file(s) - supports single files, comma-separated lists, or glob patterns | `string` | | True | |
-| `--referenceDir` | Directory containing reference legend files | `string` | | True | |
-| `--outdir` | The output directory where the results will be saved | `string` | `./results` | True | |
-
-### Analysis options
-
-| Parameter | Description | Type | Default | Required | Hidden |
-|-----------|-----------|------|---------|----------|--------|
-| `--fixMethod` | Method to fix allele switches: 'remove' or 'correct' | `string` | `remove` | | |
-| `--legendPattern` | Pattern to match legend files in reference directory | `string` | `*.legend.gz` | | |
-
-### Institutional config options
-
-| Parameter | Description | Type | Default | Required | Hidden |
-|-----------|-----------|------|---------|----------|--------|
-| `--custom_config_version` | Git commit id for Institutional configs | `string` | `master` | | True |
-| `--custom_config_base` | Base directory for Institutional configs | `string` | `https://raw.githubusercontent.com/nf-core/configs/master` | | True |
-| `--config_profile_name` | Institutional config name | `string` | | | True |
-| `--config_profile_description` | Institutional config description | `string` | | | True |
-
-## Credits
-
-CheckRef was originally written by Mamana Mbiyavanga.
-
-We thank the following people for their extensive assistance in the development of this pipeline:
-
-- AfriGen-D project members and collaborators
-- Contributing researchers and developers
-- The broader genomics and open science communities
-
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
-For further information or help, don't hesitate to get in touch on the [AfriGen-D discussions](https://github.com/orgs/AfriGen-D/discussions) or visit our [helpdesk](https://helpdesk.afrigen-d.org).
-
-## Citations
-
-If you use CheckRef for your analysis, please cite it using the following:
-
-```bibtex
-@software{checkref_2025,
-  title = {CheckRef: Allele Switch Checker for Population Genetics},
-  author = {Mamana Mbiyavanga and AfriGen-D project},
-  year = {2025},
-  url = {https://github.com/AfriGen-D/checkref},
-  note = {Nextflow pipeline for detecting and correcting allele switches}
-}
+```text
+checkref/
+├── README.md                    # This file - main pipeline documentation
+├── main.nf                     # Main Nextflow pipeline
+├── direct.nf                   # Direct mode pipeline
+├── minimal.nf                  # Minimal pipeline
+├── nextflow.config             # Nextflow configuration
+├── test.sh                     # Test script
+├── bin/                        # Pipeline scripts and utilities
+│   └── check_allele_switch.py  # Main allele switch checking script
+├── results/                    # Test results and outputs
+├── test_results/               # Test execution results
+└── checkref-update-tools/      # Update and management tools
+    ├── CHECKREF_UPDATE_README.md    # Detailed update tools documentation
+    ├── check-checkref-version.sh    # Version checking script
+    ├── update-checkref.sh           # Full-featured update script
+    ├── quick-update-checkref.sh     # Simple update script
+    ├── manage-checkref-config.sh    # Configuration management
+    └── logs/                        # Update operation logs
+        └── checkref-update.log      # Update log file
 ```
 
-This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) initiative, and reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
+## Update Management
 
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Holger Hoeft, Johannes Alneberg, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
+For updating the checkref application in production environments, use the tools in the `checkref-update-tools/` directory:
 
-## About AfriGen-D
+```bash
+# Check current vs latest version
+cd checkref-update-tools/
+./check-checkref-version.sh
 
-AfriGen-D is a project dedicated to enabling innovation in African genomics research through:
+# Preview what an update would do
+./update-checkref.sh --dry-run
 
-- **Research Tools**: Cutting-edge bioinformatics software
-- **Data Resources**: Curated genomic datasets and reference panels
-- **Community**: Collaborative research networks
-- **Education**: Training and capacity building
+# Perform the update
+./update-checkref.sh
+```
 
-Visit [afrigen-d.org](https://afrigen-d.org) to learn more about our mission and projects.
+For detailed information about update tools, see [checkref-update-tools/CHECKREF_UPDATE_README.md](checkref-update-tools/CHECKREF_UPDATE_README.md).
 
-## License
+## Overview
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This workflow analyzes a target VCF file against a reference legend file to identify variants that have:
+- Matching alleles
+- Switched alleles (REF/ALT flipped)
+- Complementary strand issues (A↔T, C↔G)
+- Other inconsistencies
 
----
+After identifying switched sites, the workflow can either:
+1. Remove the problematic variants
+2. Correct the alleles by swapping REF and ALT
 
-<div align="center">
-  <p><strong>Enabling innovation in African genomics research</strong></p>
-  <p>
-    <a href="https://afrigen-d.org">Website</a> •
-    <a href="https://twitter.com/AfriGenD">Twitter</a> •
-    <a href="https://linkedin.com/company/afrigen-d">LinkedIn</a> •
-    <a href="https://youtube.com/@afrigen-d">YouTube</a>
-  </p>
-</div>
+## Requirements
+
+- Nextflow (>=21.04.0)
+- Python 3
+- bcftools
+- Docker or Singularity (optional)
+
+## Usage
+
+```bash
+# Basic usage
+nextflow run main.nf --targetVcf <path_to_target.vcf.gz> --referenceLegend <path_to_reference.legend.gz>
+
+# Remove switched sites (default)
+nextflow run main.nf --targetVcf <path_to_target.vcf.gz> --referenceLegend <path_to_reference.legend.gz> --fixMethod remove
+
+# Correct switched sites by swapping REF/ALT
+nextflow run main.nf --targetVcf <path_to_target.vcf.gz> --referenceLegend <path_to_reference.legend.gz> --fixMethod correct
+```
+
+### Required Parameters
+
+- `--targetVcf`: Path to the target VCF file (can be gzipped)
+- `--referenceLegend`: Path to the reference panel legend file (e.g., V6HC-S_chr22_all_sitesOnly.v2025.01.legend.gz)
+
+### Optional Parameters
+
+- `--outputDir`: Output directory (default: 'results')
+- `--fixMethod`: Method to fix allele switches: 'remove' or 'correct' (default: 'remove')
+- `--help`: Display help message
+
+## Legend File Format
+
+The reference legend file should be in the standard legend format with columns for:
+- ID or variant identifier
+- Position 
+- Allele 0 (reference allele)
+- Allele 1 (alternate allele)
+
+Example legend file format:
+```
+id position a0 a1
+rs12345 16050075 A G
+rs67890 16050115 G A
+```
+
+The script will attempt to automatically detect the chromosome from the ID or filename.
+
+## Methods
+
+The workflow consists of several key processes that work together to identify and optionally fix allele switches:
+
+### 1. CHECK_ALLELE_SWITCH Process
+
+This is the core analysis process that compares target VCF files against reference legend files. The process:
+
+- **Extracts variants**: Uses `bcftools` to extract SNP variants from the target VCF file, filtering out indels and complex variants
+- **Parses reference data**: Reads the reference legend file (supports both gzipped and uncompressed formats) and automatically detects column structure
+- **Chromosome matching**: Automatically detects chromosome information from filenames or variant IDs to match target and reference files
+- **Allele comparison**: For each variant present in both files, compares the REF and ALT alleles and classifies them as:
+  - **MATCH**: Identical alleles (REF₁=REF₂, ALT₁=ALT₂)
+  - **SWITCH**: Flipped alleles (REF₁=ALT₂, ALT₁=REF₂) 
+  - **COMPLEMENT**: Complementary strand (A↔T, C↔G transformations)
+  - **COMPLEMENT_SWITCH**: Both complementary and switched
+  - **OTHER**: Any other inconsistency
+
+- **Output generation**: Creates two output files:
+  - A detailed TSV file listing all switched variants with their allele information
+  - A summary file with statistics about the comparison
+
+### 2. REMOVE_SWITCHED_SITES Process
+
+This process creates a "cleaned" VCF by removing problematic variants:
+
+- **Site identification**: Reads the allele switch results from the CHECK_ALLELE_SWITCH process
+- **Coordinate conversion**: Converts the 1-based coordinates from the results to 0-based BED format for bcftools
+- **VCF filtering**: Uses `bcftools view` with the `-T ^exclude_sites.bed` option to remove variants at switched positions
+- **Quality control**: Handles edge cases where no sites need to be excluded (copies original file)
+- **Indexing**: Creates a tabix index (.tbi) for the output VCF for efficient access
+- **Reporting**: Logs the number of sites removed for each chromosome
+
+### 3. CORRECT_SWITCHED_SITES Process
+
+This process fixes allele switches by swapping REF and ALT alleles:
+
+- **Switch detection**: Parses the allele switch results to identify variants that need correction
+- **Python correction script**: Dynamically generates a Python script that:
+  - Reads the target VCF file (handles both gzipped and uncompressed formats)
+  - For each variant marked as switched, swaps the REF and ALT alleles
+  - Adds a `SWITCHED=1` flag to the INFO field to mark corrected variants
+  - Preserves all other VCF information (genotypes, quality scores, etc.)
+- **VCF processing**: Processes the entire VCF file while maintaining proper format
+- **Sorting and indexing**: Uses `bcftools sort` to ensure proper coordinate order and creates an index
+- **Validation**: Tracks and reports the number of successfully corrected variants
+
+### 4. CREATE_SUMMARY Process
+
+This process aggregates results across all processed chromosomes:
+
+- **Summary collection**: Gathers individual chromosome summary files from the CHECK_ALLELE_SWITCH process
+- **Report generation**: Creates a comprehensive summary report that includes:
+  - Statistics for each chromosome processed
+  - Overall counts of matched, switched, and problematic variants
+  - Percentage breakdowns for each category
+- **Formatting**: Produces a human-readable report with clear section headers and organized data
+
+### Pipeline Logic Flow
+
+1. **Input validation**: The workflow first validates that target VCF files and reference legend files are provided
+2. **File matching**: Uses chromosome detection algorithms to automatically pair VCF files with their corresponding legend files
+3. **Parallel processing**: Processes multiple chromosomes simultaneously for efficiency
+4. **Conditional execution**: Runs either the REMOVE_SWITCHED_SITES or CORRECT_SWITCHED_SITES process based on the `--fixMethod` parameter
+5. **Result aggregation**: Collects all individual results into a final summary report
+
+### Quality Control Features
+
+- **Error handling**: Gracefully handles missing files, malformed data, and edge cases
+- **Logging**: Provides detailed logging for debugging and monitoring progress
+- **Validation**: Includes checks for file integrity and expected formats
+- **Flexible input**: Supports various chromosome naming conventions (chr1, 1, chrX, etc.)
+- **Memory efficiency**: Processes large files without loading everything into memory
+
+## Profiles
+
+The workflow comes with several predefined profiles:
+
+```bash
+# Run locally
+nextflow run main.nf -profile standard ...
+
+# Run using Slurm
+nextflow run main.nf -profile hpc ...
+
+# Run with Docker
+nextflow run main.nf -profile docker ...
+
+# Run with Singularity
+nextflow run main.nf -profile singularity ...
+```
+
+## Output Files
+
+The pipeline produces:
+
+### Check Phase:
+- `<target_prefix>_allele_switch_results.tsv`: Tab-separated file with allele switches
+- `<target_prefix>_allele_switch_summary.txt`: Summary statistics of the analysis
+
+### Fix Phase:
+When using `--fixMethod remove`:
+- `<target_prefix>.noswitch.vcf.gz`: VCF with switched sites removed
+- `<target_prefix>.noswitch.vcf.gz.tbi`: Index for the fixed VCF
+
+When using `--fixMethod correct`:
+- `<target_prefix>.corrected.vcf.gz`: VCF with corrected alleles (REF/ALT swapped)
+- `<target_prefix>.corrected.vcf.gz.tbi`: Index for the corrected VCF
+
+## Allele Switch Results Format
+
+The allele switch results file includes:
+```
+CHROM   POS     ALLELE_SWITCH
+chr22   22565895        A>G|G>A
+```
+
+Where:
+- CHROM: Chromosome
+- POS: Position (1-based)
+- ALLELE_SWITCH: Shows format "TargetREF>TargetALT|ReferenceREF>ReferenceALT"
+
+## Example Output Format
+
+### allele_switch_results.tsv
+```
+CHROM   POS     TARGET_REF  TARGET_ALT  REF_REF  REF_ALT  STATUS
+22      16050075        A       G        A       G       MATCH
+22      16050115        G       A        A       G       SWITCH
+22      16050213        C       T        G       A       COMPLEMENT
+22      16050298        C       A        T       G       COMPLEMENT_SWITCH
+```
+
+### allele_switch_summary.txt
+```
+Results Summary:
+Total variants at common positions: 1000
+Matched variants: 850 (85.00%)
+Switched alleles: 50 (5.00%)
+Complementary strand issues: 80 (8.00%)
+Complement + switch issues: 50 (5.00%)
+Other inconsistencies: 20 (2.00%)
+``` 
+
+Example: 
+nextflow run checkref/main.nf --targetVcfs "/home/ubuntu/devs/iscb-tutorial/chr*.vcf.gz" --referenceDir "/mnt/storage/imputationserver2/apps/h3africa/v6hc-s/sites/" --legendPattern "V6HC-S_chr1_all_sitesOnly.v2025.01.legend.gz"
