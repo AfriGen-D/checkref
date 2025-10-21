@@ -370,39 +370,45 @@ def check_allele_switch(target_vcf, reference_file, output_file, use_legend=Fals
                 status = "OTHER"
                 other += 1
     
-    # Create the reference panel legend file with all variants
+    # Create the reference panel legend file with ONLY variants that were compared
     try:
         with gzip.open(ref_panel_file, 'wt') as ref_out:
             # Write legend header (matching the original format)
             ref_out.write("ID\tCHROM\tPOS\tREF\tALT\n")
-            
-            # Write all reference variants (both matched and unmatched)
-            for pos in sorted(ref_variants.keys()):
+
+            # Write ONLY reference variants at common positions (sites that were actually compared)
+            variants_written = 0
+            for pos in sorted(common_positions):
                 chrom, position = pos
                 ref_ref, ref_alt = ref_variants[pos]
                 # Use original chromosome notation
                 original_chrom = original_chroms.get(chrom, f"chr{chrom}")
-                
+
                 # Create variant ID
                 variant_id = f"{original_chrom}:{position}:{ref_ref}:{ref_alt}"
-                
-                # Write variant (with placeholder values for frequency columns)
+
+                # Write variant
                 ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\n")
+                variants_written += 1
         print(f"Successfully created reference legend file: {ref_panel_file}")
+        print(f"Wrote {variants_written:,} reference variants at compared positions")
     except Exception as e:
         print(f"Error creating reference legend file: {e}")
         # Create a simple uncompressed legend file as fallback
         try:
             ref_panel_file_txt = ref_panel_file.replace('.gz', '')
+            variants_written = 0
             with open(ref_panel_file_txt, 'w') as ref_out:
                 ref_out.write("ID\tCHROM\tPOS\tREF\tALT\n")
-                for pos in sorted(ref_variants.keys()):
+                for pos in sorted(common_positions):
                     chrom, position = pos
                     ref_ref, ref_alt = ref_variants[pos]
                     original_chrom = original_chroms.get(chrom, f"chr{chrom}")
                     variant_id = f"{original_chrom}:{position}:{ref_ref}:{ref_alt}"
                     ref_out.write(f"{variant_id}\t{original_chrom}\t{position}\t{ref_ref}\t{ref_alt}\n")
+                    variants_written += 1
             print(f"Created uncompressed reference legend file: {ref_panel_file_txt}")
+            print(f"Wrote {variants_written:,} reference variants at compared positions")
         except Exception as e2:
             print(f"Error creating uncompressed legend file: {e2}")
     
@@ -437,9 +443,10 @@ def check_allele_switch(target_vcf, reference_file, output_file, use_legend=Fals
     
     print(f"Switched alleles written to file: {output_file}")
     print(f"Reference panel legend file created: {ref_panel_file}")
-    print(f"Total variants in extracted legend: {len(ref_variants)}")
-    print(f"Variants overlapping with target: {len(matched_ref_positions)}")
-    print(f"Variants unique to reference: {len(ref_variants) - len(matched_ref_positions)}")
+    print(f"Total variants in source reference: {len(ref_variants)}")
+    print(f"Variants compared (written to extracted legend): {len(common_positions)}")
+    print(f"  - Matched: {len(matched_ref_positions)}")
+    print(f"  - Switched: {switched}")
 
 def is_complement(allele1, allele2):
     """Check if alleles are complementary (A↔T, C↔G)"""

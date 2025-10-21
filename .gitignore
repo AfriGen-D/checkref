@@ -57,3 +57,6 @@ BUILD_MISMATCH_DETECTED
 
 # Project-specific files (not for publication)
 CLAUDE.md
+.gitignore.bak
+
+.history

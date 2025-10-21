@@ -6,9 +6,14 @@ nextflow.enable.dsl=2
 params.targetVcfs = null
 params.referenceDir = null
 params.legendPattern = "*.legend.gz"
-params.outputDir = "results"
 params.fixMethod = "remove" // 'remove' or 'correct'
 params.help = false
+
+// Output directories (set by Cloudgene or default to subdirectories)
+params.allele_switch_results = "allele_switch_results"
+params.summary_files = "summary_files"
+params.fixed_vcfs = "fixed_vcfs"
+params.logs = "logs"
 
 // Show help message
 def helpMessage() {
@@ -56,7 +61,7 @@ def extractChromosome(filename) {
 
 // Validate VCF files for corruption, emptiness, and basic format issues
 process VALIDATE_VCF_FILES {
-    publishDir "${params.outputDir}/validation", mode: 'copy', pattern: "*_validation_report.txt"
+    publishDir "${params.logs}/validation", mode: 'copy', pattern: "*_validation_report.txt"
     tag "${chr}:validation"
     container 'mamana/vcf-processing:latest'
     
@@ -146,7 +151,9 @@ process VALIDATE_VCF_FILES {
 
 // Process to check allele switches
 process CHECK_ALLELE_SWITCH {
-    publishDir "${params.outputDir}", mode: 'copy'
+    publishDir "${params.allele_switch_results}", mode: 'copy', pattern: "*_allele_switch_results.tsv"
+    publishDir "${params.summary_files}", mode: 'copy', pattern: "*_allele_switch_summary.txt"
+    publishDir "${params.summary_files}", mode: 'copy', pattern: "*.legend.gz"
     tag "${chr}:${target_vcf.simpleName}"
 
     input:
@@ -171,9 +178,9 @@ process CHECK_ALLELE_SWITCH {
     echo "Using target VCF: \$TARGET_VCF"
     echo "Using reference legend: \$REFERENCE_LEGEND"
 
-    # Run the allele switch checker
+    # Run the allele switch checker (generates extracted legend file)
     python3 ${projectDir}/bin/check_allele_switch.py \$TARGET_VCF \$REFERENCE_LEGEND ${report} --legend > ${summary}
-    
+
     # Check if build mismatch was detected
     if [ -f "BUILD_MISMATCH_DETECTED" ]; then
         # Display the graceful exit message
@@ -200,7 +207,7 @@ process CHECK_ALLELE_SWITCH {
 
 // Process to create a fixed VCF by removing positions with allele switches
 process REMOVE_SWITCHED_SITES {
-    publishDir "${params.outputDir}", mode: 'copy'
+    publishDir "${params.fixed_vcfs}", mode: 'copy', pattern: "*.{noswitch}.vcf.gz*"
     tag "${chr}:${target_vcf.simpleName}"
     
     input:
@@ -242,7 +249,7 @@ process REMOVE_SWITCHED_SITES {
 
 // Process to create a fixed VCF by correcting allele switches
 process CORRECT_SWITCHED_SITES {
-    publishDir "${params.outputDir}", mode: 'copy'
+    publishDir "${params.fixed_vcfs}", mode: 'copy', pattern: "*.{corrected}.vcf.gz*"
     tag "${chr}:${target_vcf.simpleName}"
     
     input:
@@ -400,7 +407,7 @@ with open("failed_count.txt", "w") as f:
 
 // Verify that corrections were successful
 process VERIFY_CORRECTIONS {
-    publishDir "${params.outputDir}/verification", mode: 'copy'
+    publishDir "${params.logs}/verification", mode: 'copy'
     tag "${chr}:verification"
     container 'mamana/vcf-processing:latest'
     
@@ -444,7 +451,7 @@ process VERIFY_CORRECTIONS {
 
 // Create a summary of all processed chromosomes
 process CREATE_SUMMARY {
-    publishDir "${params.outputDir}", mode: 'copy'
+    publishDir "${params.summary_files}", mode: 'copy'
     
     input:
     path summary_files
@@ -654,7 +661,7 @@ workflow {
         
         // Collect correction stats for reporting
         CORRECT_SWITCHED_SITES.out.correction_stats
-            .collectFile(name: 'correction_stats.txt', storeDir: params.outputDir) { chr, fixed, failed ->
+            .collectFile(name: 'correction_stats.txt', storeDir: "${params.logs}") { chr, fixed, failed ->
                 def fixedCount = fixed.text.trim()
                 def failedCount = failed.text.trim()
                 "Chr ${chr}: Corrected=${fixedCount}, Failed=${failedCount}\n"
@@ -684,8 +691,8 @@ workflow {
 // Print comprehensive test-style summary at workflow completion
 workflow.onComplete {
     // Check if validation reports exist and show any failures
-    def validationDir = file("${params.outputDir}")
-    def validationReports = validationDir.listFiles().findAll { it.name.endsWith('_validation_report.txt') }
+    def validationDir = file("${params.logs}/validation")
+    def validationReports = validationDir.exists() ? validationDir.listFiles().findAll { it.name.endsWith('_validation_report.txt') } : []
     
     def validationFailures = []
     validationReports.each { report ->
@@ -716,7 +723,7 @@ workflow.onComplete {
     }
     
     // Extract results from summary files for reporting
-    def summaryFile = file("${params.outputDir}/all_chromosomes_summary.txt")
+    def summaryFile = file("${params.summary_files}/all_chromosomes_summary.txt")
     
     if (summaryFile.exists()) {
         def summaryText = summaryFile.text
@@ -747,7 +754,7 @@ workflow.onComplete {
             sitesRemaining = targetCount // All sites remain after correction
             
             // Read correction stats if available
-            def correctionStatsFile = file("${params.outputDir}/correction_stats.txt")
+            def correctionStatsFile = file("${params.logs}/correction_stats.txt")
             if (correctionStatsFile.exists()) {
                 def stats = correctionStatsFile.text
                 def totalCorrected = 0
@@ -814,7 +821,7 @@ workflow.onComplete {
         }
         
         // Check verification results if available
-        def verificationDir = file("${params.outputDir}/verification")
+        def verificationDir = file("${params.logs}/verification")
         if (verificationDir.exists()) {
             def verificationFiles = verificationDir.listFiles().findAll { it.name.endsWith('_verification_results.txt') }
             def allPassed = true
@@ -836,7 +843,7 @@ workflow.onComplete {
         println "  ALL TESTS PASSED SUCCESSFULLY!"
         println "======================================"
         def timestamp = new Date().format('yyyyMMdd_HHmmss')
-        println "Test output directory: ${params.outputDir}"
+        println "Test output directory: ${workflow.workDir.parent}"
         println "Pipeline log: ${workflow.runName}_${timestamp}.log"
         println ""
         println "Test Results Summary:"
@@ -855,9 +862,9 @@ workflow.onComplete {
         println "- Target overlap: ${targetPct}%"
         println "- Reference overlap: ${refPct}%"
         println ""
-        
+
         println "Generated Files:"
-        def outputDir = file(params.outputDir)
+        def outputDir = file(params.summary_files).parent
         if (outputDir.exists()) {
             outputDir.listFiles().findAll { it.isFile() }.sort { it.name }.each { f ->
                 def size = f.size()
@@ -865,9 +872,9 @@ workflow.onComplete {
                              size >= 1024 ? "${Math.round(size*100/1024)/100}K" : "${size}B"
                 println "- ${f.name} (${sizeStr})"
             }
-            
+
             // Add reports directory if it exists
-            def reportsDir = file("${params.outputDir}/reports")
+            def reportsDir = file("${workflow.workDir}/reports")
             if (reportsDir.exists()) {
                 println "- reports/ (directory with execution reports)"
             }
