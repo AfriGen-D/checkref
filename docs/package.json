@@ -1,0 +1,32 @@
+{
+  "name": "checkref-docs",
+  "version": "1.0.0",
+  "description": "Allele Switch Checker for Population Genetics - Documentation",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0"
+  },
+  "keywords": [
+    "nextflow",
+    "bioinformatics",
+    "pipeline",
+    "genomics",
+    "allele-switch",
+    "vcf",
+    "population-genetics",
+    "documentation",
+    "afrigen-d"
+  ],
+  "author": "AfriGen-D Project",
+  "license": "MIT",
+  "homepage": "https://afrigen-d.github.io/checkref",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AfriGen-D/checkref.git"
+  }
+}
