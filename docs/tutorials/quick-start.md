@@ -13,13 +13,41 @@ Before starting, ensure you have:
 
 If you haven't installed these yet, see the [Installation Guide](/guide/installation).
 
-## Step 1: Get CheckRef
+## Step 1: Get CheckRef and Test Data
 
-Clone the CheckRef repository with test data:
+You have two options:
+
+### Option A: Clone Full Repository (Recommended)
 
 ```bash
+# Clone repository - includes test data, source code, and docs
 git clone https://github.com/AfriGen-D/checkref.git
 cd checkref
+```
+
+### Option B: Download Test Data Only
+
+If you only want to test CheckRef without cloning the full repository:
+
+```bash
+# Create directories
+mkdir -p test_data/chr22 test_data/reference
+
+# Download test data files (~30KB total)
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz \
+     -P test_data/chr22/
+
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz \
+     -P test_data/reference/
+```
+
+**Alternative with curl:**
+```bash
+curl -L https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz \
+     --create-dirs -o test_data/chr22/chr22_sample.vcf.gz
+
+curl -L https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz \
+     --create-dirs -o test_data/reference/chr22_sample.legend.gz
 ```
 
 ## Step 2: Inspect Test Data

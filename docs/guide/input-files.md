@@ -2,6 +2,21 @@
 
 CheckRef requires two types of input files: target VCF files and reference legend files. This guide explains the requirements and formats for each.
 
+## Quick Start with Test Data
+
+CheckRef includes test data you can use immediately. [See test data examples below](#example-with-test-data).
+
+**Get test data:**
+```bash
+# Option 1: Clone repository (includes test data)
+git clone https://github.com/AfriGen-D/checkref.git
+
+# Option 2: Download test data only
+mkdir -p test_data/chr22 test_data/reference
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz -P test_data/chr22/
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz -P test_data/reference/
+```
+
 ## Target VCF Files
 
 ### Format Requirements
@@ -21,6 +36,28 @@ CheckRef automatically detects chromosomes from filenames using these patterns:
 - `sample_chr1.vcf.gz`
 - `data.chr22.vcf.gz`
 - `chr1_filtered.vcf.gz`
+
+### Example with Test Data
+
+CheckRef's test data shows a real working example:
+
+**File**: `test_data/chr22/chr22_sample.vcf.gz`
+- ~1000 variants from chromosome 22
+- Positions: 16050036 to 16053438
+- Size: ~22KB compressed
+
+**Peek at the file:**
+```bash
+zcat test_data/chr22/chr22_sample.vcf.gz | grep -v "^##" | head -5
+```
+
+**Output:**
+```
+#CHROM  POS      ID          REF  ALT  QUAL  FILTER  INFO  FORMAT  HG00096
+chr22   16050036 rs587697622 A    G    .     PASS    .     GT      0|0
+chr22   16050115 rs9605903   C    T    .     PASS    .     GT      0|0
+chr22   16050213 rs5747620   G    A    .     PASS    .     GT      0|0
+```
 
 ### VCF File Structure
 
@@ -56,6 +93,29 @@ chr1    150000  rs456   C       T       .       PASS    .       GT      1/1
 - **Compression**: gzipped (`.legend.gz`) recommended
 - **Header**: Required (column names)
 - **Chromosome naming**: Must match VCF files
+
+### Example with Test Data
+
+CheckRef's test data includes a matching legend file:
+
+**File**: `test_data/reference/chr22_sample.legend.gz`
+- Reference alleles for chr22 positions
+- Covers test VCF positions
+- Size: ~7KB compressed
+
+**Peek at the file:**
+```bash
+zcat test_data/reference/chr22_sample.legend.gz | head -5
+```
+
+**Output:**
+```
+id                   position  a0  a1
+22:16050036:A:G      16050036  A   G
+22:16050115:C:T      16050115  C   T
+22:16050213:G:A      16050213  G   A
+22:16050319:C:T      16050319  C   T
+```
 
 ### Legend File Structure
 

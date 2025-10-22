@@ -2,6 +2,30 @@
 
 CheckRef generates organized output files in four main directories. This guide explains each output type and how to interpret the results.
 
+## Quick Example with Test Data
+
+Running CheckRef on test data produces these results:
+
+```bash
+# Run with test data
+nextflow run AfriGen-D/checkref \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --outdir test_results \
+    -profile docker
+
+# Check outputs
+ls test_results/
+```
+
+**Expected output files:**
+- `chr22_allele_switch_results.tsv` - Detected switches
+- `chr22_allele_switch_summary.txt` - Statistics
+- `chr22.noswitch.vcf.gz` - Cleaned VCF
+- `all_chromosomes_summary.txt` - Overall summary
+
+[See detailed examples below](#example-results-from-test-data).
+
 ## Output Directory Structure
 
 ```
@@ -13,6 +37,49 @@ results/
     ├── validation/             # VCF validation reports
     └── verification/           # Post-correction verification
 ```
+
+## Example Results from Test Data
+
+When you run CheckRef on the test data, here's what you'll see:
+
+### Test Data Summary
+
+**File**: `test_results/all_chromosomes_summary.txt`
+
+```
+==================================================
+              ALLELE SWITCH SUMMARY
+==================================================
+
+Chromosome: chr22
+
+Total variants in target VCF: 952
+Total variants in reference: 987
+Total variants at common positions: 845
+
+Results:
+  MATCH: 798 variants (94.44%)
+  SWITCH: 12 variants (1.42%)
+  COMPLEMENT: 20 variants (2.37%)
+  OTHER: 15 variants (1.78%)
+
+Overlap Statistics:
+  Overlap with target VCF: 88.76%
+  Overlap with reference: 85.61%
+==================================================
+```
+
+### Test Data Allele Switches
+
+**File**: `test_results/chr22_allele_switch_results.tsv`
+
+```tsv
+CHR     POS        ALLELE_INFO
+chr22   16050115   A>G|G>A
+chr22   16050298   C>T|T>C
+```
+
+These are the actual switched alleles detected in the test data.
 
 ## Allele Switch Results
 
@@ -31,7 +98,7 @@ Location: `results/allele_switch_results/`
 | POS | Position | `16050036` |
 | ALLELE_INFO | VCF→Legend allele comparison | `A>G\|G>A` |
 
-**Example**:
+**Generic example**:
 ```tsv
 CHR     POS        ALLELE_INFO
 chr22   16050036   A>G|G>A

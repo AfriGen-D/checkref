@@ -2,6 +2,31 @@
 
 CheckRef can be configured using parameters, profiles, and configuration files. This guide covers all configuration options.
 
+## Quick Start with Test Data
+
+The simplest way to run CheckRef is with the included test data:
+
+```bash
+nextflow run AfriGen-D/checkref \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --fixMethod remove \
+    --outdir test_results \
+    -profile docker
+```
+
+**Get test data:**
+```bash
+# Option 1: Clone repository
+git clone https://github.com/AfriGen-D/checkref.git
+
+# Option 2: Download only test data
+mkdir -p test_data/{chr22,reference}
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz -P test_data/chr22/
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz -P test_data/reference/
+```
+
 ## Configuration Methods
 
 ### 1. Command-Line Parameters
@@ -31,10 +56,33 @@ nextflow run AfriGen-D/checkref \
 
 Create a custom configuration file:
 
+**Example with test data** (`test_data.config`):
+```groovy
+// test_data.config - Quick test configuration
+params {
+    targetVcfs = "test_data/chr22/*.vcf.gz"
+    referenceDir = "test_data/reference/"
+    legendPattern = "*.legend.gz"
+    fixMethod = "remove"
+    outdir = "test_results"
+}
+
+process {
+    cpus = 2
+    memory = 4.GB
+}
+```
+
+Run with test data config:
+```bash
+nextflow run AfriGen-D/checkref -c test_data.config -profile docker
+```
+
+**Example with your own data** (`my_config.config`):
 ```groovy
 // my_config.config
 params {
-    targetVcfs = "*.vcf.gz"
+    targetVcfs = "/path/to/vcfs/*.vcf.gz"
     referenceDir = "/path/to/reference/"
     fixMethod = "correct"
     outdir = "my_results"
@@ -48,7 +96,7 @@ process {
 
 Run with custom config:
 ```bash
-nextflow run AfriGen-D/checkref -c my_config.config
+nextflow run AfriGen-D/checkref -c my_config.config -profile docker
 ```
 
 ## Available Profiles

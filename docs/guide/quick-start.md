@@ -13,16 +13,44 @@ Ensure you have:
 
 The fastest way to test CheckRef is with our sample data:
 
-### Step 1: Download CheckRef with Test Data
+### Step 1: Get CheckRef and Test Data
+
+**Option A: Clone Full Repository** (includes test data, source code, docs):
 
 ```bash
-# Clone the repository
+# Clone the repository - test data comes with it!
 git clone https://github.com/AfriGen-D/checkref.git
 cd checkref
 
-# Test data is included in test_data/
-ls test_data/
+# Verify test data is present
+ls -lh test_data/chr22/
+ls -lh test_data/reference/
 ```
+
+**Option B: Download Test Data Only** (if you don't need the full repo):
+
+```bash
+# Create directories
+mkdir -p test_data/chr22 test_data/reference
+
+# Download test data files (~30KB total)
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz \
+     -P test_data/chr22/
+
+wget https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz \
+     -P test_data/reference/
+```
+
+**Alternative with curl:**
+```bash
+curl -L https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/chr22/chr22_sample.vcf.gz \
+     --create-dirs -o test_data/chr22/chr22_sample.vcf.gz
+
+curl -L https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/reference/chr22_sample.legend.gz \
+     --create-dirs -o test_data/reference/chr22_sample.legend.gz
+```
+
+**Note**: Test data (~30KB) is small and quick to download!
 
 ### Step 2: Run with Test Data
 
