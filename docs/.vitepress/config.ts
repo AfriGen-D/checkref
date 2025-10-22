@@ -13,8 +13,8 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Tutorials', link: '/tutorials/' },
-      { text: 'Examples', link: '/examples/' },
       { text: 'Parameters', link: '/api/parameters' },
+      { text: 'Examples', link: '/examples/' },
       { text: 'Workflow', link: '/workflow/' }
     ],
 
