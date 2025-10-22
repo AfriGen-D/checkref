@@ -11,6 +11,8 @@ Before starting, ensure you have:
 - ✅ Docker or Singularity installed
 - ✅ Basic command line knowledge
 
+**Note**: This tutorial uses CheckRef's included test data (~30KB). You don't need your own VCF files to get started!
+
 If you haven't installed these yet, see the [Installation Guide](/guide/installation).
 
 ## Step 1: Get CheckRef and Test Data
@@ -52,23 +54,29 @@ curl -L https://raw.githubusercontent.com/AfriGen-D/checkref/main/test_data/refe
 
 ## Step 2: Inspect Test Data
 
-Let's look at what test data is included:
+Let's verify the test data is ready to use:
 
 ```bash
-# List test data files
-ls -lh test_data/chr22/
-ls -lh test_data/reference/
+# Check your VCF file
+ls -lh test_data/chr22/chr22_sample.vcf.gz
 
-# Peek at the VCF file
-zcat test_data/chr22/chr22_sample.vcf.gz | head -n 20
+# Verify it's readable
+bcftools view -h test_data/chr22/chr22_sample.vcf.gz | head -3
 
-# Peek at the legend file
-zcat test_data/reference/chr22_sample.legend.gz | head -n 10
+# Check the legend file
+ls -lh test_data/reference/chr22_sample.legend.gz
+
+# Peek at the VCF file contents
+zcat test_data/chr22/chr22_sample.vcf.gz | grep -v "^##" | head -5
+
+# Peek at the legend file contents
+zcat test_data/reference/chr22_sample.legend.gz | head -5
 ```
 
 You should see:
-- **VCF file**: Contains ~1000 variants from chromosome 22
-- **Legend file**: Reference allele information
+- **VCF file** (`chr22_sample.vcf.gz`): ~22KB, contains ~1000 variants from chromosome 22
+- **Legend file** (`chr22_sample.legend.gz`): ~7KB, reference allele information
+- **Both files are compressed** (`.gz`) and **ready to use**
 
 ## Step 3: Run CheckRef
 
