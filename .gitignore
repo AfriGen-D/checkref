@@ -15,6 +15,9 @@ test_output/
 test_*/
 test_results/
 
+# Exception: Include test_data directory (sample data for users)
+!test_data/
+
 # Test artifacts
 test/test_output/
 test/*.log

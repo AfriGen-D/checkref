@@ -9,7 +9,47 @@ Ensure you have:
 - Docker or Singularity installed
 - Your VCF files and reference legend files ready
 
-## Running CheckRef
+## Try with Test Data
+
+The fastest way to test CheckRef is with our sample data:
+
+### Step 1: Download CheckRef with Test Data
+
+```bash
+# Clone the repository
+git clone https://github.com/AfriGen-D/checkref.git
+cd checkref
+
+# Test data is included in test_data/
+ls test_data/
+```
+
+### Step 2: Run with Test Data
+
+```bash
+nextflow run main.nf \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --fixMethod remove \
+    --outdir test_results \
+    -profile docker
+```
+
+Expected runtime: ~2-5 minutes
+
+### Step 3: Check Results
+
+```bash
+ls test_results/
+# You should see:
+# - chr22_allele_switch_results.tsv
+# - chr22_allele_switch_summary.txt
+# - chr22.noswitch.vcf.gz
+# - all_chromosomes_summary.txt
+```
+
+## Running with Your Data
 
 ### Step 1: Prepare Your Data
 

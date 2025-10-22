@@ -44,6 +44,22 @@ Choose one of the following:
 
 Run the pipeline with test data to verify everything is working:
 
+**Option A: Quick Test (recommended)**
+```bash
+# Clone repository with test data
+git clone https://github.com/AfriGen-D/checkref.git
+cd checkref
+
+# Run with included test data
+nextflow run main.nf \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --outdir test_results \
+    -profile docker
+```
+
+**Option B: Pull from GitHub**
 ```bash
 nextflow run AfriGen-D/checkref -profile test,docker --outdir test_results
 ```
@@ -51,8 +67,19 @@ nextflow run AfriGen-D/checkref -profile test,docker --outdir test_results
 This will:
 - Download the CheckRef pipeline from GitHub
 - Pull the required Docker container
-- Run on test data
+- Run on chr22 sample data (~1000 variants)
 - Generate results in `test_results/`
+- Complete in ~2-5 minutes
+
+**Verify Results:**
+```bash
+ls test_results/
+# Expected files:
+# - chr22_allele_switch_results.tsv
+# - chr22_allele_switch_summary.txt
+# - chr22.noswitch.vcf.gz
+# - all_chromosomes_summary.txt
+```
 
 ## What's Next?
 

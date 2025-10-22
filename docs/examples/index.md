@@ -2,6 +2,30 @@
 
 Practical examples of using CheckRef in different scenarios.
 
+## Test with Sample Data
+
+Start with our included test data to verify your installation:
+
+```bash
+# Clone the repository
+git clone https://github.com/AfriGen-D/checkref.git
+cd checkref
+
+# Run with test data (chr22 sample)
+nextflow run main.nf \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --fixMethod remove \
+    --outdir test_results \
+    -profile docker
+```
+
+**Expected Results:**
+- Runtime: ~2-5 minutes
+- Output: Allele switch results, summary, and cleaned VCF
+- Use this to verify CheckRef works before using your own data
+
 ## Basic Examples
 
 ### Single Chromosome
