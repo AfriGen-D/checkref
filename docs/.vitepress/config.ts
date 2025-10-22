@@ -12,12 +12,23 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'Parameters', link: '/api/parameters' },
+      { text: 'Tutorials', link: '/tutorials/' },
       { text: 'Examples', link: '/examples/' },
+      { text: 'Parameters', link: '/api/parameters' },
       { text: 'Workflow', link: '/workflow/' }
     ],
 
     sidebar: {
+      '/tutorials/': [
+        {
+          text: 'Tutorials',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/tutorials/' },
+            { text: 'Quick Start', link: '/tutorials/quick-start' }
+          ]
+        }
+      ],
       '/guide/': [
         {
           text: 'Getting Started',
