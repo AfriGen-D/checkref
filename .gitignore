@@ -13,10 +13,16 @@ test_output/
 
 # Test directories (local testing only)
 test_*/
+test_results/
 
 # Test artifacts
 test/test_output/
 test/*.log
+
+# Test and development scripts (moved to dev_docs)
+test.sh
+minimal.nf
+direct.nf
 
 # Temporary files
 *.tmp
