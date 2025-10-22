@@ -59,4 +59,7 @@ BUILD_MISMATCH_DETECTED
 CLAUDE.md
 .gitignore.bak
 
+# Development documentation and tools (internal only)
+dev_docs/
+
 .history
