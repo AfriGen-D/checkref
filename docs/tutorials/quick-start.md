@@ -11,7 +11,7 @@ Before starting, ensure you have:
 - ✅ Docker or Singularity installed
 - ✅ Basic command line knowledge
 
-If you haven't installed these yet, see the [First Time Setup](./first-time-setup) tutorial.
+If you haven't installed these yet, see the [Installation Guide](/guide/installation).
 
 ## Step 1: Get CheckRef
 
@@ -172,9 +172,9 @@ Any other allele mismatch that doesn't fit the above categories.
 Now that you've run CheckRef successfully, you can:
 
 1. **Use Your Own Data**: Replace test_data paths with your VCF files
-2. **Learn More**: Check out [Understanding Output](./understanding-output)
-3. **Scale Up**: See [HPC Usage](./hpc-usage) for running on multiple chromosomes
-4. **Optimize**: Read [Performance Tips](./performance) for large datasets
+2. **Learn More**: Check out [Output Files Guide](/guide/output-files)
+3. **Scale Up**: See [Examples](/examples/) for running on multiple chromosomes
+4. **Optimize**: Read [Configuration Guide](/guide/configuration) for customization
 
 ## Common Issues
 

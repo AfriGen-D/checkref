@@ -2,33 +2,32 @@
 
 Step-by-step tutorials to help you get started with CheckRef.
 
-## Getting Started
+## Available Tutorials
 
-New to CheckRef? Start here:
+### Getting Started
 
-- [First Time Setup](./first-time-setup) - Install Nextflow and Docker/Singularity
-- [Quick Start](./quick-start) - Run your first CheckRef analysis in 5 minutes
-- [Understanding Output](./understanding-output) - Learn what the results mean
+- [Quick Start](./quick-start) - Run your first CheckRef analysis in 5 minutes with test data
 
-## Common Use Cases
+### Additional Tutorials (Coming Soon)
 
-Practical tutorials for real-world scenarios:
+We're working on more tutorials! Check back soon for:
 
-- [Pre-Imputation QC](./pre-imputation-qc) - Check allele switches before imputation
-- [Multi-Cohort Harmonization](./multi-cohort) - Harmonize data across multiple cohorts
-- [HPC Cluster Usage](./hpc-usage) - Run CheckRef on SLURM/PBS clusters
+- **First Time Setup** - Installing Nextflow and Docker/Singularity from scratch
+- **Understanding Output** - Detailed explanation of all output files and what they mean
+- **Pre-Imputation QC** - Using CheckRef before genotype imputation
+- **Multi-Cohort Harmonization** - Harmonizing data across multiple cohorts
+- **HPC Cluster Usage** - Running CheckRef on SLURM/PBS clusters efficiently
+- **Custom Profiles** - Creating custom Nextflow configuration profiles
+- **Performance Optimization** - Speeding up large-scale analyses
+- **Advanced Troubleshooting** - Solving complex issues
 
-## Advanced Topics
+## Already Familiar?
 
-For experienced users:
+If you're ready to dive in, check out:
 
-- [Custom Profiles](./custom-profiles) - Create custom Nextflow profiles
-- [Optimizing Performance](./performance) - Speed up large-scale analyses
-- [Troubleshooting Guide](./troubleshooting-advanced) - Solve complex issues
-
-## Video Tutorials
-
-Coming soon! Video walkthroughs of common workflows.
+- [Guide](/guide/getting-started) - Complete documentation
+- [Examples](/examples/) - Copy-paste example commands
+- [Parameters](/api/parameters) - Full parameter reference
 
 ## Need Help?
 
