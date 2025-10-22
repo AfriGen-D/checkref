@@ -102,3 +102,5 @@ CheckRef performs seven key steps:
 ## About AfriGen-D
 
 CheckRef is part of the AfriGen-D project, dedicated to enabling innovation in African genomics research through cutting-edge bioinformatics tools, curated datasets, collaborative networks, and capacity building.
+
+<!-- Last updated: 2025-10-22 -->
