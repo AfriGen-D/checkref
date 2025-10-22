@@ -101,12 +101,23 @@ results/
 
 ## Example Commands
 
-### Single Chromosome
+### Single Chromosome (Test Data)
 
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "sample_chr22.vcf.gz" \
-    --referenceDir "/reference/legends/" \
+    --targetVcfs "test_data/chr22/chr22_sample.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --outdir chr22_results \
+    -profile docker
+```
+
+### Your Own Data - Single Chromosome
+
+```bash
+nextflow run AfriGen-D/checkref \
+    --targetVcfs "your_chr22.vcf.gz" \
+    --referenceDir "/path/to/reference/legends/" \
     --outdir chr22_results \
     -profile docker
 ```
@@ -116,17 +127,17 @@ nextflow run AfriGen-D/checkref \
 ```bash
 nextflow run AfriGen-D/checkref \
     --targetVcfs "chr1.vcf.gz,chr2.vcf.gz,chr3.vcf.gz" \
-    --referenceDir "/reference/legends/" \
+    --referenceDir "/path/to/reference/legends/" \
     --outdir results \
     -profile docker
 ```
 
-### Glob Pattern
+### Glob Pattern (Multiple Chromosomes)
 
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "/data/vcfs/sample_chr*.vcf.gz" \
-    --referenceDir "/reference/legends/" \
+    --targetVcfs "/path/to/vcfs/sample_chr*.vcf.gz" \
+    --referenceDir "/path/to/reference/legends/" \
     --outdir results \
     -profile docker
 ```
@@ -136,7 +147,7 @@ nextflow run AfriGen-D/checkref \
 ```bash
 nextflow run AfriGen-D/checkref \
     --targetVcfs "*.vcf.gz" \
-    --referenceDir "/reference/" \
+    --referenceDir "/path/to/reference/" \
     --outdir results \
     -profile singularity
 ```

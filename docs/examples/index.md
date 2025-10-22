@@ -28,14 +28,27 @@ nextflow run main.nf \
 
 ## Basic Examples
 
-### Single Chromosome
+### Single Chromosome (With Test Data)
 
-Process a single chromosome:
+Process a single chromosome using the included test data:
 
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "sample_chr22.vcf.gz" \
-    --referenceDir "/reference/legends/" \
+    --targetVcfs "test_data/chr22/chr22_sample.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
+    --outdir chr22_results \
+    -profile docker
+```
+
+### Single Chromosome (Your Data)
+
+Process your own chromosome data:
+
+```bash
+nextflow run AfriGen-D/checkref \
+    --targetVcfs "your_sample_chr22.vcf.gz" \
+    --referenceDir "/path/to/reference/legends/" \
     --outdir chr22_results \
     -profile docker
 ```
@@ -46,8 +59,8 @@ Process all chromosomes at once:
 
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "/data/vcfs/sample_chr*.vcf.gz" \
-    --referenceDir "/data/1000G_phase3/" \
+    --targetVcfs "/path/to/vcfs/sample_chr*.vcf.gz" \
+    --referenceDir "/path/to/reference/" \
     --outdir results \
     -profile docker
 ```
@@ -56,8 +69,8 @@ nextflow run AfriGen-D/checkref \
 
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "/data/vcfs/*.vcf.gz" \
-    --referenceDir "/data/reference/" \
+    --targetVcfs "/path/to/vcfs/*.vcf.gz" \
+    --referenceDir "/path/to/reference/" \
     --fixMethod correct \
     --outdir whole_genome_results \
     -profile docker
@@ -67,29 +80,35 @@ nextflow run AfriGen-D/checkref \
 
 ### Remove Switched Sites (Default)
 
+Test with sample data:
+
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "*.vcf.gz" \
-    --referenceDir "/ref/" \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
     --fixMethod remove \
     --outdir results_remove \
     -profile docker
 ```
 
-**Output**: `*.noswitch.vcf.gz` (smaller files, problematic sites excluded)
+**Output**: `chr22.noswitch.vcf.gz` (smaller file, problematic sites excluded)
 
 ### Correct Switched Sites
 
+Test with sample data:
+
 ```bash
 nextflow run AfriGen-D/checkref \
-    --targetVcfs "*.vcf.gz" \
-    --referenceDir "/ref/" \
+    --targetVcfs "test_data/chr22/*.vcf.gz" \
+    --referenceDir "test_data/reference/" \
+    --legendPattern "*.legend.gz" \
     --fixMethod correct \
     --outdir results_correct \
     -profile docker
 ```
 
-**Output**: `*.corrected.vcf.gz` (same size, alleles fixed, marked with SWITCHED=1)
+**Output**: `chr22.corrected.vcf.gz` (same size, alleles fixed, marked with SWITCHED=1)
 
 ## HPC Examples
 
