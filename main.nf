@@ -755,8 +755,8 @@ Please check:
         .filter { it != null }
     
     // Get reference legend files
-    legendPattern = "${params.referenceDir}/${params.legendPattern}"
-    legend_files = file(legendPattern)
+    def legend_pattern_path = "${params.referenceDir}/${params.legendPattern}"
+    legend_files = file(legend_pattern_path)
 
     if (legend_files.size() == 0) {
         def errorMsg = """
@@ -765,7 +765,7 @@ Please check:
 ╚════════════════════════════════════════════════════════════════════════════════╝
 
 No legend files match the pattern:
-  📁 ${legendPattern}
+  📁 ${legend_pattern_path}
 
 Please check:
   1. The --referenceDir path is correct: ${params.referenceDir}
