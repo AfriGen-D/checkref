@@ -698,34 +698,8 @@ For more information, use: --help
     def targetVcfsInput = params.targetVcfs instanceof List ? params.targetVcfs.join(',') : params.targetVcfs.toString()
     def vcfPaths = targetVcfsInput.split(',').collect { it.trim() }
 
-    // Check if input VCF files exist
-    def missingFiles = []
-    vcfPaths.each { path ->
-        def f = file(path)
-        if (!f.exists()) {
-            missingFiles << path
-        }
-    }
-
-    if (missingFiles.size() > 0) {
-        def fileList = missingFiles.collect { "  ❌ ${it}" }.join('\n')
-        def errorMsg = """
-╔════════════════════════════════════════════════════════════════════════════════╗
-║                      ⚠️  INPUT FILES NOT FOUND  ⚠️                             ║
-╚════════════════════════════════════════════════════════════════════════════════╝
-
-The following VCF file(s) do not exist:
-${fileList}
-
-Please check:
-  1. File paths are correct and absolute (not relative)
-  2. Files exist at the specified locations
-  3. You have read permissions for these files
-"""
-        error errorMsg
-    }
-
     // Extract chromosome information from VCF data (not filenames)
+    // The checkIfExists option will automatically fail with clear error if files don't exist
     vcf_files_ch = Channel.fromPath(vcfPaths, checkIfExists: true)
     EXTRACT_VCF_INFO(vcf_files_ch)
 
