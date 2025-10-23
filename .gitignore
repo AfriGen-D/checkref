@@ -10,6 +10,10 @@ work/
 results/
 test_output/
 *_output/
+allele_switch_results/
+fixed_vcfs/
+logs/
+summary_files/
 
 # Test directories (local testing only)
 test_*/
