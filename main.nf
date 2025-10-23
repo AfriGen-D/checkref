@@ -762,6 +762,20 @@ Please check:
             return tuple(chr, legend_file)
         }
 
+    // Collect VCF and legend information for matching report
+    def vcf_info_list = []
+    def legend_info_list = []
+
+    validated_vcfs.subscribe { chr, vcf ->
+        def build = chr.startsWith('chr') ? 'b38' : 'b37'
+        vcf_info_list << [chr: chr, file: vcf.name, build: build]
+    }
+
+    reference_legends_ch.subscribe { chr, legend ->
+        def build = chr.startsWith('chr') ? 'b38' : 'b37'
+        legend_info_list << [chr: chr, file: legend.name, build: build]
+    }
+
     // Join target VCFs with their matching reference legend files by chromosome
     matched_inputs = validated_vcfs.join(reference_legends_ch, failOnMismatch: false)
         .filter { it.size() > 2 && it[2] != null } // Filter out entries where no matching legend was found
@@ -771,9 +785,49 @@ Please check:
             return tuple(chr, vcf, legend)
         }
 
-    // Check if we have any matches, if not exit gracefully with informative message
+    // Check if we have any matches, if not create a detailed report and exit gracefully
     matched_inputs
         .ifEmpty {
+            // Write matching failure report
+            def reportPath = "${params.logs}/validation/matching_failure_report.txt"
+            def reportFile = file(reportPath)
+            def reportDir = file("${params.logs}/validation")
+            reportDir.mkdirs()
+
+            def reportContent = """
+====================================
+VCF-LEGEND MATCHING FAILURE REPORT
+====================================
+Date: ${new Date().format('yyyy-MM-dd HH:mm:ss')}
+
+SUMMARY:
+Could not match any VCF files with reference legend files.
+
+VCF FILES DETECTED:
+${vcf_info_list.collect { "  - ${it.file}: chromosome=${it.chr}, build=${it.build}" }.join('\n')}
+
+LEGEND FILES DETECTED:
+${legend_info_list.collect { "  - ${it.file}: chromosome=${it.chr}, build=${it.build}" }.join('\n')}
+
+COMMON CAUSES:
+  • Build mismatch: VCF is b37 (chromosome '4') but legend is b38 (chromosome 'chr4')
+  • Build mismatch: VCF is b38 (chromosome 'chr4') but legend is b37 (chromosome '4')
+  • Chromosome mismatch: VCF and legend files are for different chromosomes
+  • Wrong legend pattern: The --legendPattern may not match your reference files
+
+RECOMMENDATIONS:
+  1. Ensure your VCF and reference panel use the same genome build (both b37 or both b38)
+  2. Check that chromosome naming is consistent (e.g., both use 'chr4' or both use '4')
+  3. Verify your --legendPattern correctly matches the reference legend files
+
+PARAMETERS USED:
+  - Target VCFs: ${params.targetVcfs}
+  - Reference Dir: ${params.referenceDir}
+  - Legend Pattern: ${params.legendPattern}
+====================================
+"""
+            reportFile.text = reportContent
+
             def errorMsg = """
 ╔════════════════════════════════════════════════════════════════════════════════╗
 ║                        ⚠️  NO MATCHES FOUND  ⚠️                                ║
@@ -791,6 +845,8 @@ Please ensure:
   1. Your VCF and reference panel use the same genome build (both b37 or both b38)
   2. The chromosome naming is consistent (e.g., both use 'chr4' or both use '4')
   3. Your --legendPattern correctly matches the reference legend files
+
+📄 Detailed report saved to: ${reportPath}
 """
             error errorMsg
         }
