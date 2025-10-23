@@ -205,6 +205,102 @@ process CHECK_ALLELE_SWITCH {
     """
 }
 
+// Process to extract chromosome and build information from VCF data
+process EXTRACT_VCF_INFO {
+    tag "${vcf_file.simpleName}"
+
+    input:
+    path vcf_file
+
+    output:
+    tuple stdout, path(vcf_file), emit: vcf_info
+
+    script:
+    """
+    #!/bin/bash
+    set -e
+
+    # Extract first variant line's CHROM field (column 1) using zcat/grep
+    # Disable pipefail temporarily to avoid SIGPIPE error from head
+    CHROM=\$(zcat ${vcf_file} 2>/dev/null | grep -v "^#" | head -1 | cut -f1 | tr -d '\\n' || true)
+
+    # Check if we got a chromosome value
+    if [ -z "\$CHROM" ]; then
+        echo "" >&2
+        echo "╔════════════════════════════════════════════════════════════════════════════════╗" >&2
+        echo "║                    ⚠️  VCF FILE HAS NO VARIANTS  ⚠️                            ║" >&2
+        echo "╚════════════════════════════════════════════════════════════════════════════════╝" >&2
+        echo "" >&2
+        echo "Could not extract chromosome from: ${vcf_file}" >&2
+        echo "" >&2
+        echo "Possible causes:" >&2
+        echo "  • VCF file is empty (no content)" >&2
+        echo "  • VCF file has only headers but no variant lines" >&2
+        echo "  • VCF file is corrupted or not properly gzipped" >&2
+        echo "  • All variant lines are commented out" >&2
+        echo "" >&2
+        echo "Please ensure:" >&2
+        echo "  1. The VCF file contains actual variant data" >&2
+        echo "  2. The file is properly gzipped (try: zcat file.vcf.gz | head)" >&2
+        echo "  3. At least one variant line exists (non-comment, non-header)" >&2
+        echo "" >&2
+        exit 1
+    fi
+
+    # Detect build based on chromosome format (DO NOT NORMALIZE)
+    if [[ \$CHROM == chr* ]]; then
+        BUILD="b38"
+    else
+        BUILD="b37"
+    fi
+
+    # Output for verification to stderr (won't affect stdout capture)
+    echo "Extracted from ${vcf_file}: CHROM=\$CHROM, BUILD=\$BUILD" >&2
+
+    # Output ORIGINAL chromosome (NOT normalized) to stdout
+    echo -n "\$CHROM"
+    """
+}
+
+// Process to extract chromosome information from legend data
+process EXTRACT_LEGEND_INFO {
+    tag "${legend_file.simpleName}"
+
+    input:
+    path legend_file
+
+    output:
+    tuple stdout, path(legend_file), emit: legend_info
+
+    script:
+    """
+    #!/bin/bash
+    set -e
+
+    # Extract CHROM from legend file (column 2, skip header line)
+    CHROM=\$(zcat ${legend_file} | awk 'NR==2 {print \$2}' | tr -d '\\n' || true)
+
+    # Check if we got a chromosome value
+    if [ -z "\$CHROM" ]; then
+        echo "ERROR: Could not extract chromosome from ${legend_file}" >&2
+        exit 1
+    fi
+
+    # Detect build based on chromosome format (DO NOT NORMALIZE)
+    if [[ \$CHROM == chr* ]]; then
+        BUILD="b38"
+    else
+        BUILD="b37"
+    fi
+
+    # Output for verification to stderr
+    echo "Extracted from ${legend_file}: CHROM=\$CHROM, BUILD=\$BUILD" >&2
+
+    # Output ORIGINAL chromosome (NOT normalized) to stdout
+    echo -n "\$CHROM"
+    """
+}
+
 // Process to create a fixed VCF by removing positions with allele switches
 process REMOVE_SWITCHED_SITES {
     publishDir "${params.fixed_vcfs}", mode: 'copy', pattern: "*.{noswitch}.vcf.gz*"
@@ -565,33 +661,83 @@ process CREATE_SUMMARY {
 // Workflow definition
 workflow {
     // Show help if needed
-    if (params.help || params.targetVcfs == null || params.referenceDir == null) {
+    if (params.help) {
         helpMessage()
-        if (params.help) {
-            exit 0
-        } else {
-            exit 1
+        exit 0
+    }
+
+    // Validate required parameters
+    if (params.targetVcfs == null || params.referenceDir == null) {
+        def errorMsg = """
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    ⚠️  MISSING REQUIRED PARAMETERS  ⚠️                         ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+Required parameters are missing. Please provide:
+"""
+        if (params.targetVcfs == null) {
+            errorMsg += "  ❌ --targetVcfs: Path to VCF file(s) to check\n"
         }
+        if (params.referenceDir == null) {
+            errorMsg += "  ❌ --referenceDir: Directory containing reference legend files\n"
+        }
+        errorMsg += """
+Usage:
+  nextflow run main.nf --targetVcfs <vcf_files> --referenceDir <legend_dir>
+
+Examples:
+  nextflow run main.nf --targetVcfs data/sample.vcf.gz --referenceDir refs/legends/
+  nextflow run main.nf --targetVcfs "data/*.vcf.gz" --referenceDir refs/legends/
+
+For more information, use: --help
+"""
+        error errorMsg
     }
     
     // Define input files using direct approach
     def targetVcfsInput = params.targetVcfs instanceof List ? params.targetVcfs.join(',') : params.targetVcfs.toString()
     def vcfPaths = targetVcfsInput.split(',').collect { it.trim() }
-    
-    // Create a channel with VCF files and their chromosomes
-    target_vcfs_ch = Channel.fromPath(vcfPaths)
-        .map { vcf_file ->
-            def chr = extractChromosome(vcf_file.name)
-            if (chr) {
-                log.info "Detected chromosome ${chr} for VCF file: ${vcf_file.name}"
-                return tuple(chr, vcf_file)
-            } else {
-                log.warn "Could not determine chromosome for file: ${vcf_file.name}, skipping"
-                return null
-            }
+
+    // Check if input VCF files exist
+    def missingFiles = []
+    vcfPaths.each { path ->
+        def f = file(path)
+        if (!f.exists()) {
+            missingFiles << path
         }
-        .filter { it != null }
-    
+    }
+
+    if (missingFiles.size() > 0) {
+        def fileList = missingFiles.collect { "  ❌ ${it}" }.join('\n')
+        def errorMsg = """
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                      ⚠️  INPUT FILES NOT FOUND  ⚠️                             ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+The following VCF file(s) do not exist:
+${fileList}
+
+Please check:
+  1. File paths are correct and absolute (not relative)
+  2. Files exist at the specified locations
+  3. You have read permissions for these files
+"""
+        error errorMsg
+    }
+
+    // Extract chromosome information from VCF data (not filenames)
+    vcf_files_ch = Channel.fromPath(vcfPaths, checkIfExists: true)
+    EXTRACT_VCF_INFO(vcf_files_ch)
+
+    // Process extracted info and create (chr, vcf_file) tuples
+    target_vcfs_ch = EXTRACT_VCF_INFO.out.vcf_info
+        .map { chr, vcf_file ->
+            chr = chr.trim()  // Remove any whitespace
+            def build = chr.startsWith('chr') ? 'b38' : 'b37'
+            log.info "Detected VCF: ${vcf_file.name} -> chromosome=${chr}, build=${build}"
+            return tuple(chr, vcf_file)
+        }
+
     // Validate VCF files before processing
     VALIDATE_VCF_FILES(target_vcfs_ch)
     
@@ -611,36 +757,73 @@ workflow {
     // Get reference legend files
     legendPattern = "${params.referenceDir}/${params.legendPattern}"
     legend_files = file(legendPattern)
-    
+
     if (legend_files.size() == 0) {
-        error "No reference legend files found with pattern: ${legendPattern}"
+        def errorMsg = """
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                   ⚠️  NO REFERENCE LEGEND FILES FOUND  ⚠️                      ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+No legend files match the pattern:
+  📁 ${legendPattern}
+
+Please check:
+  1. The --referenceDir path is correct: ${params.referenceDir}
+  2. The --legendPattern is correct: ${params.legendPattern}
+  3. Legend files exist in the reference directory
+"""
+        error errorMsg
     }
-    
-    // Create a channel with legend files and their chromosomes - no logging
-    reference_legends_ch = Channel.of(legend_files)
-        .flatten()
-        .map { legend_file ->
-            def chr = extractChromosome(legend_file.name)
-            if (chr) {
-                // Removed log message for legend files
-                return tuple(chr, legend_file)
-            } else {
-                log.warn "Could not determine chromosome for legend file: ${legend_file.name}, skipping"
-                return null
-            }
+
+    // Extract chromosome information from legend file data (not filenames)
+    legend_files_ch = Channel.of(legend_files).flatten()
+    EXTRACT_LEGEND_INFO(legend_files_ch)
+
+    // Process extracted info and create (chr, legend_file) tuples
+    reference_legends_ch = EXTRACT_LEGEND_INFO.out.legend_info
+        .map { chr, legend_file ->
+            chr = chr.trim()  // Remove any whitespace
+            def build = chr.startsWith('chr') ? 'b38' : 'b37'
+            log.info "Detected Legend: ${legend_file.name} -> chromosome=${chr}, build=${build}"
+            return tuple(chr, legend_file)
         }
-        .filter { it != null }
-    
+
     // Join target VCFs with their matching reference legend files by chromosome
     matched_inputs = validated_vcfs.join(reference_legends_ch, failOnMismatch: false)
         .filter { it.size() > 2 && it[2] != null } // Filter out entries where no matching legend was found
         .map { chr, vcf, legend ->
-            log.info "Matched: VCF ${vcf.name} with legend ${legend.name} for chromosome ${chr}"
+            def vcf_build = chr.startsWith('chr') ? 'b38' : 'b37'
+            log.info "Matched: VCF ${vcf.name} (${chr}, ${vcf_build}) with legend ${legend.name} (${chr}, ${vcf_build})"
             return tuple(chr, vcf, legend)
         }
-    
+
+    // Check if we have any matches, if not exit gracefully with informative message
+    matched_inputs
+        .ifEmpty {
+            def errorMsg = """
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                        ⚠️  NO MATCHES FOUND  ⚠️                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+Could not match any VCF files with reference legend files.
+
+Common causes:
+  • Build mismatch: VCF is b37 (chromosome '4') but legend is b38 (chromosome 'chr4')
+  • Build mismatch: VCF is b38 (chromosome 'chr4') but legend is b37 (chromosome '4')
+  • Chromosome mismatch: VCF and legend files are for different chromosomes
+  • Wrong legend pattern: The --legendPattern may not match your reference files
+
+Please ensure:
+  1. Your VCF and reference panel use the same genome build (both b37 or both b38)
+  2. The chromosome naming is consistent (e.g., both use 'chr4' or both use '4')
+  3. Your --legendPattern correctly matches the reference legend files
+"""
+            error errorMsg
+        }
+        .set { matched_inputs_checked }
+
     // Run allele switch checking for each matched pair
-    CHECK_ALLELE_SWITCH(matched_inputs)
+    CHECK_ALLELE_SWITCH(matched_inputs_checked)
 
     // Check if any build mismatches were detected
     CHECK_ALLELE_SWITCH.out.build_mismatch
