@@ -828,25 +828,66 @@ PARAMETERS USED:
 """
             reportFile.text = reportContent
 
+            // ── Auto-diagnose the mismatch so the terminal error is specific
+            def vcfBuilds   = vcf_info_list.collect { it.build }.unique()
+            def legendBuilds = legend_info_list.collect { it.build }.unique()
+            def vcfChrs     = vcf_info_list.collect { it.chr }.toSet()
+            def legendChrs  = legend_info_list.collect { it.chr }.toSet()
+            def buildLabel  = { b -> b == 'b37' ? 'b37 (GRCh37/hg19)' : 'b38 (GRCh38/hg38)' }
+
+            def diagnosis
+            def howToFix
+            if (vcf_info_list.isEmpty()) {
+                diagnosis = "No VCF files were detected from the input path."
+                howToFix  = "Check that --targetVcfs points at a valid .vcf / .vcf.gz file (or directory of them)."
+            } else if (legend_info_list.isEmpty()) {
+                diagnosis = "No reference legend files were detected."
+                howToFix  = "Check that --referenceDir and --legendPattern correctly point at your panel's .legend[.gz] files."
+            } else if (vcfBuilds.size() == 1 && legendBuilds.size() == 1 && vcfBuilds[0] != legendBuilds[0]) {
+                def u = vcfBuilds[0], p = legendBuilds[0]
+                diagnosis = "Build mismatch -- VCF is ${buildLabel(u)}, reference panel is ${buildLabel(p)}."
+                howToFix  = (u == 'b37' && p == 'b38')
+                    ? "Run the VCF Liftover workflow (b37 -> b38) on your VCF, then resubmit.\n  Or select a b37 reference panel if one is available."
+                    : "Run the VCF Liftover workflow (b38 -> b37) on your VCF, then resubmit.\n  Or select a b38 reference panel if one is available."
+            } else if (vcfChrs.intersect(legendChrs).isEmpty()) {
+                def sample = legendChrs.sort().take(5).join(', ')
+                diagnosis = "Chromosome mismatch -- your VCF covers ${vcfChrs.sort().join(', ')}, " +
+                            "but the reference panel covers ${sample}${legendChrs.size() > 5 ? ', ...' : ''}."
+                howToFix  = "Confirm the reference panel you selected covers the chromosomes in your VCF."
+            } else {
+                diagnosis = "Could not auto-classify the mismatch. Inspect the detected files above."
+                howToFix  = "1. Ensure VCF and reference use the same build (both b37 or both b38).\n" +
+                            "  2. Ensure chromosome naming is consistent (both 'chr4' or both '4').\n" +
+                            "  3. Verify --legendPattern matches your reference legend files."
+            }
+
+            // Compact listings (truncate large panels so the message stays readable)
+            def fmtEntry = { e -> "  - ${e.file}  (chromosome=${e.chr}, build=${e.build})" }
+            def vcfBlock    = vcf_info_list.collect(fmtEntry).join('\n') ?: '  (none detected)'
+            def legendShown = legend_info_list.take(5)
+            def legendBlock = legendShown.collect(fmtEntry).join('\n') ?: '  (none detected)'
+            def legendMore  = legend_info_list.size() > legendShown.size()
+                ? "\n  ... plus ${legend_info_list.size() - legendShown.size()} more"
+                : ''
+
             def errorMsg = """
-╔════════════════════════════════════════════════════════════════════════════════╗
-║                        ⚠️  NO MATCHES FOUND  ⚠️                                ║
-╚════════════════════════════════════════════════════════════════════════════════╝
+================================================================================
+  NO MATCHES FOUND -- VCF cannot be paired with any reference legend file
+================================================================================
 
-Could not match any VCF files with reference legend files.
+YOUR VCF FILES:
+${vcfBlock}
 
-Common causes:
-  • Build mismatch: VCF is b37 (chromosome '4') but legend is b38 (chromosome 'chr4')
-  • Build mismatch: VCF is b38 (chromosome 'chr4') but legend is b37 (chromosome '4')
-  • Chromosome mismatch: VCF and legend files are for different chromosomes
-  • Wrong legend pattern: The --legendPattern may not match your reference files
+REFERENCE LEGEND FILES:
+${legendBlock}${legendMore}
 
-Please ensure:
-  1. Your VCF and reference panel use the same genome build (both b37 or both b38)
-  2. The chromosome naming is consistent (e.g., both use 'chr4' or both use '4')
-  3. Your --legendPattern correctly matches the reference legend files
+DIAGNOSIS:
+  ${diagnosis}
 
-📄 Detailed report saved to: ${reportPath}
+HOW TO FIX:
+  ${howToFix}
+
+Full diagnostic report: ${reportPath}
 """
             error errorMsg
         }
