@@ -10,16 +10,38 @@ import groovy.json.JsonOutput
 // the FedImpute backend to render an actionable error UI; if the file is
 // absent the backend falls back to parsing stdout.
 def emitStructuredError(Map err, String errorMsg) {
+    writeStructuredErrorPayload(err)
+    error errorMsg
+}
+
+// Write the structured-error JSON to every location the WES outputs layer
+// is likely to serve from:
+//   1. ${params.logs}                     -- the Nextflow run's logs dir
+//   2. ${params.outputDir}/logs           -- the published output dir so the
+//                                            WES endpoint sees a fresh file
+//                                            on retries (avoids stale copies
+//                                            left by earlier attempts)
+// The write is best-effort; any IO failure is logged but does not throw.
+def writeStructuredErrorPayload(Map err) {
     try {
-        def logsDir = file("${params.logs}")
-        logsDir.mkdirs()
         def payload = [version: "1"] + err
-        file("${logsDir}/fedimpute_error.json").text =
-            JsonOutput.prettyPrint(JsonOutput.toJson(payload))
+        def json = JsonOutput.prettyPrint(JsonOutput.toJson(payload))
+        def targets = []
+        if (params.logs) {
+            targets << file("${params.logs}")
+        }
+        if (params.outputDir) {
+            targets << file("${params.outputDir}/logs")
+        }
+        targets.unique { it.toString() }.each { dir ->
+            try {
+                dir.mkdirs()
+                file("${dir}/fedimpute_error.json").text = json
+            } catch (Exception ignored) { /* best-effort */ }
+        }
     } catch (Exception e) {
         log.warn "Failed to write fedimpute_error.json: ${e.message}"
     }
-    error errorMsg
 }
 
 // Default parameters
@@ -1011,6 +1033,41 @@ Full diagnostic report: ${reportPath}
     
     // Create a summary of all processed chromosomes
     CREATE_SUMMARY(CHECK_ALLELE_SWITCH.out.summary.collect())
+}
+
+// Safety net: if the pipeline crashes anywhere *before* reaching the
+// matching-pairs ifEmpty block (InvocationTargetException, process
+// failure, missing inputs, k8s scheduling timeouts), emitStructuredError
+// never runs -- and the FedImpute UI would have no remediation to show.
+//
+// This handler checks whether a fedimpute_error.json already exists; if
+// not, it writes a fallback PIPELINE_FAILED descriptor with a generic
+// retry remediation so the UI always has something actionable. Any run
+// that emitted its own code (BUILD_MISMATCH, NO_VCF_DETECTED, etc.) is
+// left untouched -- we do NOT overwrite a more specific error.
+workflow.onError {
+    try {
+        def existingCandidates = []
+        if (params.logs) existingCandidates << file("${params.logs}/fedimpute_error.json")
+        if (params.outputDir) existingCandidates << file("${params.outputDir}/logs/fedimpute_error.json")
+        if (existingCandidates.any { it.exists() && it.text?.trim() }) {
+            return  // a specific code was already emitted; don't clobber
+        }
+
+        def cause = workflow.errorMessage ?: workflow.errorReport ?: 'unknown'
+        writeStructuredErrorPayload([
+            code: 'PIPELINE_FAILED',
+            severity: 'pipeline_error',
+            summary: 'Pipeline crashed before reaching the validation step.',
+            detail: "The pipeline failed before it could diagnose the problem with your input.\n\nNextflow reported:\n${cause}".toString(),
+            remediation: [
+                kind: 'retry',
+                hint: 'Click Retry. If the failure persists, open the Logs tab and file an issue with the job ID so we can investigate.',
+            ],
+        ])
+    } catch (Exception e) {
+        log.warn "workflow.onError handler failed: ${e.message}"
+    }
 }
 
 // Print comprehensive test-style summary at workflow completion
