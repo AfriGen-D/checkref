@@ -911,13 +911,22 @@ Full diagnostic report: ${reportPath}
 """
 
             // Build a structured error for programmatic consumers (FedImpute UI).
-            // code/remediation are derived from the auto-diagnosis above.
+            // Every branch sets a remediation so the UI always has something
+            // actionable to show -- null remediation = no card rendered.
             def errorCode
             def remediation = null
             if (vcf_info_list.isEmpty()) {
                 errorCode = "NO_VCF_DETECTED"
+                remediation = [
+                    kind: "retry",
+                    hint: "Click Retry. The input may not have finished transferring to the compute node. If the retry also fails, file an issue on this repo with the job ID.",
+                ]
             } else if (legend_info_list.isEmpty()) {
                 errorCode = "NO_LEGEND_DETECTED"
+                remediation = [
+                    kind: "contact_support",
+                    hint: "This is a service configuration issue -- the reference panel is not registered correctly on this node. Report it to the operator with the job ID.",
+                ]
             } else if (vcfBuilds.size() == 1 && legendBuilds.size() == 1
                        && vcfBuilds[0] != legendBuilds[0]) {
                 errorCode = "BUILD_MISMATCH"
@@ -938,6 +947,10 @@ Full diagnostic report: ${reportPath}
                 ]
             } else {
                 errorCode = "MATCHING_FAILED"
+                remediation = [
+                    kind: "retry",
+                    hint: "Open the Logs tab to see detected files, then adjust build/chromosome naming or panel selection accordingly and resubmit.",
+                ]
             }
 
             emitStructuredError([
