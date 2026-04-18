@@ -1,0 +1,12 @@
+version: 1.2
+workflows:
+  - subclass: nfl
+    primaryDescriptorPath: /main.nf
+    readMePath: /README.md
+    name: allele-switch-checker
+    publish: true
+    topic: Check and fix allele switches between a target VCF and a reference panel legend file. Emits structured errors (fedimpute_error.json) so downstream platforms can surface actionable remediation.
+    latestTagAsDefault: true
+    authors:
+      - name: AfriGen-D
+        email: support@bioinformaticsinstitute.africa
