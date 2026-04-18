@@ -2,6 +2,26 @@
 
 nextflow.enable.dsl=2
 
+import groovy.json.JsonOutput
+
+// Emit a structured error descriptor under `${params.logs}/fedimpute_error.json`
+// (see docs/PIPELINE_ERROR_SCHEMA.md in the fedimpute repo), then fail the
+// pipeline with the same human-readable message. The JSON is consumed by
+// the FedImpute backend to render an actionable error UI; if the file is
+// absent the backend falls back to parsing stdout.
+def emitStructuredError(Map err, String errorMsg) {
+    try {
+        def logsDir = file("${params.logs}")
+        logsDir.mkdirs()
+        def payload = [version: "1"] + err
+        file("${logsDir}/fedimpute_error.json").text =
+            JsonOutput.prettyPrint(JsonOutput.toJson(payload))
+    } catch (Exception e) {
+        log.warn "Failed to write fedimpute_error.json: ${e.message}"
+    }
+    error errorMsg
+}
+
 // Default parameters
 params.targetVcfs = null
 params.referenceDir = null
@@ -889,7 +909,45 @@ HOW TO FIX:
 
 Full diagnostic report: ${reportPath}
 """
-            error errorMsg
+
+            // Build a structured error for programmatic consumers (FedImpute UI).
+            // code/remediation are derived from the auto-diagnosis above.
+            def errorCode
+            def remediation = null
+            if (vcf_info_list.isEmpty()) {
+                errorCode = "NO_VCF_DETECTED"
+            } else if (legend_info_list.isEmpty()) {
+                errorCode = "NO_LEGEND_DETECTED"
+            } else if (vcfBuilds.size() == 1 && legendBuilds.size() == 1
+                       && vcfBuilds[0] != legendBuilds[0]) {
+                errorCode = "BUILD_MISMATCH"
+                remediation = [
+                    kind: "run_workflow",
+                    workflow_slug: "vcf-liftover",
+                    params: [
+                        source_build: vcfBuilds[0],
+                        target_build: legendBuilds[0],
+                    ],
+                    hint: "Run VCF Liftover (${vcfBuilds[0]} -> ${legendBuilds[0]}) on your VCF, then resubmit.",
+                ]
+            } else if (vcfChrs.intersect(legendChrs).isEmpty()) {
+                errorCode = "CHROMOSOME_MISMATCH"
+                remediation = [
+                    kind: "select_panel",
+                    hint: "Pick a reference panel whose chromosomes cover ${vcfChrs.sort().join(', ')}.",
+                ]
+            } else {
+                errorCode = "MATCHING_FAILED"
+            }
+
+            emitStructuredError([
+                code: errorCode,
+                severity: "user_error",
+                summary: "NO MATCHES FOUND -- ${diagnosis}",
+                detail: errorMsg.trim(),
+                remediation: remediation,
+                report_path: reportPath,
+            ], errorMsg)
         }
         .set { matched_inputs_checked }
 
